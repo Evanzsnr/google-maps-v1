@@ -1,0 +1,282 @@
+<!-- <ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button *ngIf="marker"></ion-menu-button>
+      <ion-back-button *ngIf="!marker" ></ion-back-button>
+    </ion-buttons>
+    <ion-title>Home</ion-title>
+  </ion-toolbar>
+</ion-header> -->
+
+<!-- AIzaSyBkh4iOfraPIUxOkGLNkeq6IuMOraXZFB0 -->
+
+<ion-content>
+
+  <ion-header class="header-pane" *ngIf="_showHeaderPane">
+    <ion-toolbar>
+      <ion-buttons slot="start">
+        <ion-button fill="clear" (click)="dismiss()">
+          <ion-icon name="arrow-back-outline"  color="dark"></ion-icon>
+        </ion-button>
+      </ion-buttons>
+      <ion-title color="dark">Enter destination</ion-title>
+    </ion-toolbar>
+    <ion-toolbar>
+      <ion-item class="item-input" lines="none">
+        <img src="assets/icon/rsz_start-marker.png" slot="start">
+        <ion-input class="destination-input" [(ngModel)]="searchOrigin" (ionInput)="onSearchChange($event, 'origin')" placeholder="Enter pick-up location" clearInput="true"></ion-input>
+      </ion-item>
+      <ion-item class="item-input m-t-5" lines="none">
+        <img src="assets/icon/rsz_stop-marker.png" slot="start">
+        <ion-input class="destination-input" [(ngModel)]="searchDestination" (ionInput)="onSearchChange($event, 'destination')" placeholder="Enter drop-off location"  clearInput="true"></ion-input>
+      </ion-item>
+    </ion-toolbar>
+  </ion-header>
+  
+
+  
+  <ion-fab vertical="top" horizontal="start" slot="fixed" *ngIf="show_menu_button">
+    <ion-fab-button size="small" color="light">
+      <ion-menu-button color="primary"></ion-menu-button>
+    </ion-fab-button>
+  </ion-fab>
+  <ion-fab vertical="top" horizontal="start" slot="fixed" *ngIf="show_back_button">
+    <ion-fab-button size="small" color="light" (click)="cancel()">
+      <ion-icon name="arrow-back-outline" color="primary"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+
+  <div id="map"></div>
+
+  <!-- Increase the number of travel companions -->
+  <!-- <ion-fab vertical="bottom" horizontal="end" slot="fixed" *ngIf="origin && destination && origin.lat && destination.lat && !ongoing">
+    <ion-fab-button color="primary" (click)="add()">
+      <ion-icon name="person-add-outline"></ion-icon>
+    </ion-fab-button>
+  </ion-fab> -->
+
+  <div class="cupertino-pane" *ngIf="marker">
+    <ion-item lines="none">
+      <ion-label>
+        <h3 class="p">Hello {{client.firstname}},</h3>
+        <h2 class="h2_color">Where are you going?</h2>
+      </ion-label>
+    </ion-item>
+    <ion-card class="card_pickup1" (click)="openSearch()">
+      <ion-item lines="none">
+        <ion-icon slot="start" color="primary" expand="icon-only" name="search-outline"></ion-icon>
+        <ion-label class="ion-text-wrap">
+          <h2 class="p">Search your destination</h2>
+        </ion-label>
+      </ion-item>
+    </ion-card>
+
+    <div *ngIf="addresses && addresses.length">
+      <ion-item-divider mode="md" *ngFor="let address of addresses" (click)="chooseAddress(address)" class="ion-padding-right">
+        <ion-avatar slot="start" class="search-result">
+          <ion-icon name="location-outline"></ion-icon>
+        </ion-avatar>
+        <ion-label class="ion-text-wrap">
+          <h2>{{address}}</h2>
+        </ion-label>
+      </ion-item-divider>
+    </div>
+
+    <ion-item-divider mode="md" class="place" *ngIf="!addresses.length">
+      <ion-avatar slot="start" class="trip place_avatar">
+        <ion-icon name="home-outline"></ion-icon>
+      </ion-avatar>
+      <ion-label class="ion-text-wrap ion-text-start">
+        <h2>Add Home</h2>
+      </ion-label>       
+    </ion-item-divider>
+    <ion-item-divider mode="md" class="place" *ngIf="!addresses.length">
+      <ion-avatar slot="start" class="trip place_avatar">
+        <ion-icon name="briefcase-outline"></ion-icon>
+      </ion-avatar>
+      <ion-label class="ion-text-wrap ion-text-start">
+        <h2>Add Work Place</h2>
+      </ion-label>       
+    </ion-item-divider> 
+  </div>
+
+</ion-content>
+
+
+<ion-footer>
+
+  <div *ngIf="origin && origin.lat && destination && destination.lat && !ongoing && time && dist && route" class="distance">
+    <p *ngIf="time && dist && route">
+      {{ time }}, {{ dist }}
+    </p>
+  </div>
+  
+  <div *ngIf="origin && destination && origin.lat && destination.lat && !ongoing">        
+    <div class="ion-text-center ion-padding-start ion-padding-end">      
+      <ion-item-divider mode="md">
+        <ion-avatar slot="start" class="trip">
+          <ion-icon name="person-outline"></ion-icon>
+        </ion-avatar>
+        <ion-label class="ion-text-wrap ion-text-start">
+          <h2>{{ client.firstname }}</h2>
+          <p>{{ client.lastname }}</p>
+        </ion-label>
+        <ion-label slot="end" class="ion-text-end" *ngIf="price">
+          <h2><strong>{{price | number}} UGX</strong></h2>
+          <h2><ion-text color="primary" (click)="add()">[Add Companion]</ion-text></h2>
+        </ion-label>
+        <ion-skeleton-text style="width: 30%" animated slot="end" *ngIf="!price"></ion-skeleton-text>      
+      </ion-item-divider>
+      
+      <ion-item-divider mode="md" *ngIf="companions > 0">
+        <ion-avatar slot="start" class="trip">
+          <ion-icon name="people-outline"></ion-icon>
+        </ion-avatar>
+        <ion-label class="ion-text-wrap ion-text-start">
+          <h2>{{ companions }} Companion{{ companions === 1 ? '' : 's' }}</h2>
+          <p>Above 6 years</p>
+        </ion-label>
+        <ion-label slot="end" class="ion-text-end">
+          <h2><strong>{{getCompanionPrice(companions, price) | number}} UGX</strong></h2>
+          <h2><ion-text color="danger" (click)="remove()">[Remove]</ion-text></h2>
+        </ion-label>
+      </ion-item-divider>
+
+      <ion-item-divider mode="md" *ngIf="luggage">
+        <ion-avatar slot="start" class="trip">
+          <ion-icon name="pricetags-outline"></ion-icon>
+        </ion-avatar>
+        <ion-label class="ion-text-wrap ion-text-start">
+          <h2>Final trip fare</h2>
+        </ion-label>
+        <ion-label slot="end" *ngIf="getTotalPrice()">
+          <h2><strong>{{ getTotalPrice() | number }} UGX</strong></h2>
+        </ion-label>
+        <ion-skeleton-text style="width: 30%" animated slot="end" *ngIf="!getTotalPrice()"></ion-skeleton-text>      
+      </ion-item-divider>
+
+      <form [formGroup]="info" (ngSubmit)="confirm()">
+        <div class="cnt">
+
+          <ion-item-divider mode="md" class="item_input">
+            <ion-avatar slot="start" class="trip">
+              <ion-icon name="briefcase-outline"></ion-icon>
+            </ion-avatar>
+            <ion-select formControlName="luggage" [interfaceOptions]="luggageActionSheet" interface="action-sheet" placeholder="Luggage Category" (ionChange)="getSingleLuggage()">
+              <ion-select-option value={{lug.id}} *ngFor="let lug of luggage;let  i of index">
+                {{lug.name}} {{lug.quantity === 0 ? '' : lug.quantity}}{{lug.quantity === 0 ? '' : 'kg(s)'}} - {{lug.price}} UGX
+              </ion-select-option>
+            </ion-select>
+          </ion-item-divider>
+  
+          <ion-item-divider mode="md">
+            <ion-radio-group mode="md" [(ngModel)]="trip_mode" (ionChange)="modifyPrice($event)" formControlName="trip_mode">
+              <ion-row>
+                <ion-col >
+                  <ion-item lines="none" class="trip_type">
+                    <ion-label>Public</ion-label>
+                    <ion-radio slot="start" value="public"></ion-radio>
+                  </ion-item>
+                </ion-col>
+                <ion-col >
+                  <ion-item lines="none" class="trip_type">
+                    <ion-label>Private</ion-label>
+                    <ion-radio slot="start" value="private"></ion-radio>
+                  </ion-item>
+                </ion-col>
+              </ion-row>
+            </ion-radio-group>
+          </ion-item-divider>
+  
+          <ion-input type="hidden" [(ngModel)]="companions" min="0" formControlName="companions"></ion-input>
+  
+          <ion-row>
+            <!-- <ion-col size="3">
+              <ion-button expand="block" size="small" color="secondary" (click)="schedule()">
+                <ion-icon name="timer-outline"></ion-icon>
+              </ion-button>
+            </ion-col> -->
+            <ion-col>
+              <ion-button type="submit" size="small" expand="block" [disabled]="!info.valid || !price" >confirm</ion-button>
+            </ion-col>
+          </ion-row>
+  
+        </div>
+      </form>
+      
+    </div>
+
+    
+  
+    
+  </div>
+
+  <ion-card class="ion-padding searchCard" *ngIf="loader">
+    <ion-text class="ion-text-center">
+      <div class="container">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+        <div class="shape shape-4"></div>
+      </div>
+      <ion-label class="ion-text-wrap ion-padding-top">
+        <h2>Searching for driver</h2>
+      </ion-label>
+    </ion-text>
+  </ion-card>
+
+  <ion-card class="driverCard" *ngIf="show_driver">
+    <ion-item-divider mode="md" class="driver">
+      <ion-avatar slot="start" class="driver">
+        <img [src]="driver.photo">
+        <span class="rating">
+          <ion-icon name="{{rating == 0 ? 'star-outline' : 'star'}}"></ion-icon>
+          <p><strong>{{rating}}</strong></p>
+        </span>
+      </ion-avatar>
+      <ion-label class="ion-text-wrap">
+        <h2>{{driver.firstname}} {{driver.lastname}}</h2>
+        <p>
+          {{driverETA}}
+        </p>
+      </ion-label>
+      <ion-avatar slot="end" class="callIcon" (click)="callDriver(driver.phone_no)">
+        <ion-icon name="call"></ion-icon>
+      </ion-avatar>
+    </ion-item-divider>
+
+    <div class="ion-padding">
+      <ion-row>
+        <ion-col size="3">
+          <img src="../assets/img/cars/{{driver.car.type.slug}}.png">
+        </ion-col>
+        <ion-col class="car ion-padding-start">
+          <ion-label class="ion-text-wrap">
+            <h2>{{driver.car.brand.name}} {{driver.car.model.name}} ({{driver.car.color.name}})</h2>
+            <p>{{driver.car.license_plate}}</p>
+          </ion-label>
+        </ion-col>
+      </ion-row>
+
+      <ion-row>
+        <ion-col class="ion-no-padding car">
+          <ion-button expand="block" fill="clear" color="danger">
+            <ion-icon slot="start" name="close"></ion-icon>
+            Cancel
+          </ion-button>
+        </ion-col>
+        <ion-col class="ion-no-padding car">
+          <ion-button expand="block" fill="clear">
+            <ion-icon slot="start" name="call"></ion-icon>
+            Call
+          </ion-button>
+        </ion-col>
+      </ion-row>
+      <!-- <ion-button expand="block" >Confirm</ion-button> -->
+    </div>
+
+  </ion-card>
+
+</ion-footer>
+
+
